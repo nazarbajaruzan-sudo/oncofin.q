@@ -20,7 +20,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OncoScreening ML Болжамдау Жүйесі — 3 Сценарийлік Аналитика</title>
+    <title>OncoScreening ML Болжамдау Жүйесі - 3 Сценарийлік Аналитика</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
@@ -68,24 +68,7 @@
                 <button onclick="toggleDeployGuide()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
             </div>
             <p class="text-xs text-slate-300 leading-relaxed">
-                Python файлын (<code>main.py</code>) іске қосып, оны веб-интерфейспен байланыстырудың 3 негізгі жолы бар:
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 space-y-2">
-                    <p class="font-bold text-teal-400">1. Тегін Клауд Хостинг (Render / Railway)</p>
-                    <p class="text-slate-300"><code>Render.com</code> немесе <code>Railway.app</code> сияқты тегін хостингтерге Python кодын жүктеп, онлайн URL мекенжайын (мысалы, <code>https://onco-api.onrender.com</code>) аласыз.</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 space-y-2">
-                    <p class="font-bold text-teal-400">2. Жергілікті Ноутбук / Компьютер</p>
-                    <p class="text-slate-300">Компьютерде <code>pip install fastapi uvicorn scikit-learn</code> пәрменін орындап, <code>python main.py</code> арқылы <code>http://localhost:8000</code> мекенжайында іске қосасыз.</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 space-y-2">
-                    <p class="font-bold text-teal-400">3. Браузерлік Автономды Режим (Клиенттік ML)</p>
-                    <p class="text-slate-300">Бұл веб-интерфейсте Python-ның барлық алгоритмдері (Linear Regression, QALY, Емдеу Төлемдері) JavaScript түрінде толық қайталанған. Бэкендсіз-ақ дербес жұмыс істейді.</p>
-                </div>
-            </div>
-        </section>
-
+                
         <!-- Intro Banner -->
         <section class="border-l-4 border-teal-500 pl-4 bg-white p-6 rounded-r-xl shadow-sm border-y border-r border-slate-200">
             <h2 class="text-2xl font-extrabold text-slate-900">3 Ғылыми Сценарий Бөлінісіндегі Эпидемиологиялық Және Экономикалық Болжам</h2>
