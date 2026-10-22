@@ -1,0 +1,660 @@
+<!-- Chosen Palette: Slate & Teal Harmony (Warm slate neutrals, teal/emerald accents, subtle rose highlights) -->
+<!-- Application Structure Plan:
+  1. Navigation Header & Title Banner: Clean branding with fast anchor navigation.
+  2. Executive Summary & Core KPIs: Key aggregate metrics (baseline cost, net savings, QALY gains, ICER state).
+  3. Methodology & Queueing Theory (M/M/m Model): Comparison of traditional vs. SmartQ+OncoFin queue parameters.
+  4. Baseline Stage Distribution & Tariffs: Detailed explanation of why baseline is 52%/48% and cost breakdown per stage.
+  5. Interactive Sensitivity Analysis & Scenario Calculator: Allows the user to toggle between 3 scientific scenarios or adjust early-detection increase dynamically to recalculate total savings and QALYs in real-time.
+  6. HTA & Cost-Effectiveness Plane (Plotly WebGL): Discounted 5-year QALY calculations and Dominant Strategy proof.
+  7. Scientific Defense Talking Points: Key expert arguments for presenting to Ministry and Academic panels.
+-->
+<!-- Visualization & Content Choices:
+  - Queue Efficiency: Chart.js Grouped Bar Chart (Canvas)
+  - Treatment Tariffs: Chart.js Bar Chart with KZT formatting (Canvas)
+  - Baseline Distribution: Chart.js Doughnut Chart (Canvas)
+  - Stage Migration: Chart.js Line Chart with scenario comparison (Canvas)
+  - Net Savings & QALY: Dynamic Chart.js Bar Charts (Canvas)
+  - Cost-Effectiveness Plane: Plotly.js ScatterGL Plot (Canvas/WebGL)
+  - Interactive Dynamic Calculator: Vanilla JS updating numeric cards and chart state in real-time.
+  - NO SVG graphics or Mermaid JS used.
+-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<!DOCTYPE html>
+<html lang="kk" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онкоскрининг Оңтайландыру: Ғылыми-Экономикалық және Фармакоэкономикалық Модель</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 380px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .custom-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-50 bg-slate-900 text-white shadow-lg border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-white text-xl shadow-md">
+                    OS
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">OncoFin & SmartQ</h1>
+                    <p class="text-xs text-teal-400 font-medium">Онкоскринингті Оңтайландыру Моделі</p>
+                </div>
+            </div>
+            <nav class="flex flex-wrap justify-center gap-2 text-xs sm:text-sm font-medium">
+                <a href="#overview" class="px-3 py-1.5 rounded-md bg-slate-800 text-teal-400 hover:bg-slate-700 transition">Шолу</a>
+                <a href="#queue-model" class="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-800 transition">Кезек Теориясы</a>
+                <a href="#baseline-tariffs" class="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-800 transition">Тарифтер</a>
+                <a href="#sensitivity" class="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-800 transition">Сезімталдық Талдауы</a>
+                <a href="#hta-qaly" class="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-800 transition">HTA & QALY</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Executive Summary Header -->
+        <section id="overview" class="space-y-6">
+            <div class="border-l-4 border-teal-500 pl-4 bg-white p-6 rounded-r-xl shadow-sm border-y border-r border-slate-200">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Онкоскрининг Оңтайландыру Жобасының Фармакоэкономикалық Негіздемесі</h2>
+                        <p class="mt-2 text-slate-600 leading-relaxed text-sm md:text-base">
+                            SmartQ цифрлық кезек жүйесі мен OncoFin аналитикалық модулінің клиникалық және қаржылық тиімділігін HTA (Health Technology Assessment) халықаралық стандарттары бойынша кешенді бағалау.
+                        </p>
+                    </div>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 self-start md:self-auto">
+                        ISPOR / NICE HTA Сәйкес
+                    </span>
+                </div>
+            </div>
+
+            <!-- Top KPIs Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="stat-card p-6 rounded-xl shadow-md border border-slate-800">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-teal-400">Дәстүрлі Емдеу Төлемі</p>
+                    <p class="text-3xl font-extrabold mt-2 text-white">4.26 млн ₸</p>
+                    <p class="text-xs text-slate-400 mt-2">1 пациентке шаққандағы орташа салмақталған шығын</p>
+                </div>
+                <div class="stat-card p-6 rounded-xl shadow-md border border-slate-800">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Базалық Таза Үнем (ҚР)</p>
+                    <p class="text-3xl font-extrabold mt-2 text-emerald-300">25.86 млрд ₸</p>
+                    <p class="text-xs text-slate-400 mt-2">42,000 пациент (+7%p ерте анықтау өсіміде)</p>
+                </div>
+                <div class="stat-card p-6 rounded-xl shadow-md border border-slate-800">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-cyan-400">Маңғыстау Жылдық Үнемі</p>
+                    <p class="text-3xl font-extrabold mt-2 text-cyan-300">0.75 млрд ₸</p>
+                    <p class="text-xs text-slate-400 mt-2">1,200 өңірлік когорта үшін тікелей үнем</p>
+                </div>
+                <div class="stat-card p-6 rounded-xl shadow-md border border-slate-800">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-indigo-400">5 Жылдық Сақталған QALY</p>
+                    <p class="text-3xl font-extrabold mt-2 text-indigo-300">7,405 QALY</p>
+                    <p class="text-xs text-slate-400 mt-2">Дисконтталған өмір сапасы өсімі ($r=3\%$)</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 1: Queueing Theory (M/M/m) & Clinical Mechanism -->
+        <section id="queue-model" class="space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-xl font-bold text-slate-900 border-b pb-3">1. Кезек Теориясы және Клиникалық Механизм ($M/M/m$ Моделі)</h3>
+                <p class="text-slate-600 leading-relaxed text-sm">
+                    Скринингтік орталықтардағы пациенттер ағыны Пуассон үдерісімен ($\lambda = \eta + \lambda R$) сипатталады. Дәстүрлі жүйеде толығу коэффициенті $\rho = \lambda / \mu = 87.0\%$ болып, критикалық жүктеме тудырады. Литтл заңына ($E(W^*) = E(N^*)/\eta$) сәйкес бұл 67.5 минуттық ішкі күтуді және 45-90 күндік диагностикалық кешігуді тудырып, пациенттердің 29.3%-ы тексеруден бас тартады (Drop-out). SmartQ жүйесі пациенттерді оңтайлы бөліп, кешігуді 7-14 күнге дейін азайтады және сатылық өршуді (Stage Migration) тоқтатады.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center pt-2">
+                    <div class="custom-card p-4">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 text-center">Дәстүрлі және SmartQ Жүйелерінің Көрсеткіштерін Салыстыру</h4>
+                        <div class="chart-container">
+                            <canvas id="queueEfficiencyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 rounded-lg bg-rose-50 border border-rose-200">
+                            <h4 class="font-bold text-rose-900 text-sm">Дәстүрлі Жүйе Оқылықтары:</h4>
+                            <ul class="text-xs text-rose-800 space-y-1.5 mt-2 list-disc pl-4">
+                                <li>Күту уақыты $E(W^*)$: 67.5 мин (іс жүзінде 2-3 ай созылады)</li>
+                                <li>Жүктеме коэффициенті $\rho$: 87.0% (критикалық шамадан жоғары)</li>
+                                <li>Тексеруді аяқтамай кету (Drop-out): 29.3%</li>
+                                <li>Салдары: Ісіктің II сатыдан III/IV сатыға өту қаупі 35-45%-ға артады</li>
+                            </ul>
+                        </div>
+                        <div class="p-4 rounded-lg bg-teal-50 border border-teal-200">
+                            <h4 class="font-bold text-teal-900 text-sm">SmartQ + OncoFin Түзетуі:</h4>
+                            <ul class="text-xs text-teal-800 space-y-1.5 mt-2 list-disc pl-4">
+                                <li>Күту уақыты $E(W^*)$: 15.0 мин (77.8%-ға қысқару)</li>
+                                <li>Жүктеме коэффициенті $\rho$: 34.5% (оңтайлы ресурстық теңгерім)</li>
+                                <li>Drop-out көрсеткіші 8.5%-ға дейін төмендейді</li>
+                                <li>Салдары: Диагностика 7-14 күнде аяқталып, ерте сатыда анықтау артады</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Tariffs and Baseline Stage Distribution -->
+        <section id="baseline-tariffs" class="space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-xl font-bold text-slate-900 border-b pb-3">2. Неге Пайыздар Бұлай Алынған? Базалық Деректер мен МӘМС Тарифтері</h3>
+                <p class="text-slate-600 leading-relaxed text-sm">
+                    Дәстүрлі жүйедегі <strong>I саты — 20%, II саты — 32%, III саты — 28%, IV саты — 20%</strong> бөлінісі екі нақты ғылыми аргументке сүйенеді:
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-700">
+                    <div class="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                        <p class="font-bold text-slate-900 mb-1">1. ҚР Ресми Статистикасы (ҚазОИРРИ & ДСМ):</p>
+                        <p>Қазақстан бойынша жыл сайын ~42,000 жаңа пациент тіркеледі. Ресми статистика бойынша ерте анықтау (I-II саты) үлесі <strong>52.0%</strong>, ал кеш анықтау (III-IV саты) <strong>48.0%</strong>. Модельдегі пайыздар: $(20\% + 32\% = 52\%)$ және $(28\% + 20\% = 48\%)$ осы нақты пропорцияны толық сақтайды.</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                        <p class="font-bold text-slate-900 mb-1">2. Математикалық Модель Логикасы:</p>
+                        <p>Жоба идеясында ерте анықтау деңгейін <strong>+10%p артыру</strong> көзделген. Бастапқы I сатыны 20% деп алғанда, оптимистік сценарийде ол тура 30%-ға жетеді ($20\% + 10\% = 30\%$). Бұл сценарийлер динамикасын тексеруді жеңілдетеді.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
+                    <div class="custom-card p-4">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 text-center">ҚР МӘМС/ТМККК Емдеу Тарифтері ($C_i$, KZT)</h4>
+                        <div class="chart-container">
+                            <canvas id="tariffChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="custom-card p-4">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 text-center">Дәстүрлі Жүйедегі Базалық Сатылық Орналасу ($P_{i, \text{дәст}}$)</h4>
+                        <div class="chart-container">
+                            <canvas id="stageBaselineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Interactive Sensitivity Analysis Calculator -->
+        <section id="sensitivity" class="space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 border-b pb-3">3. Сезімталдықты Талдау (Sensitivity Analysis) және Динамикалық Калькулятор</h3>
+                    <p class="text-slate-600 leading-relaxed text-sm mt-2">
+                        HTA халықаралық стандартына сәйкес жалғыз цифрмен шектелмей, 3 сценарий есептелді. Төмендегі слайдерді жылжыту немесе батырмаларды басу арқылы жүйенің экономикалық және QALY тиімділігін динамикалық түрде есептей аласыз:
+                    </p>
+                </div>
+
+                <!-- Interactive Controls -->
+                <div class="bg-slate-900 text-white p-6 rounded-xl space-y-6 shadow-inner">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <label for="earlyShiftSlider" class="text-sm font-semibold text-teal-300">
+                            Ерте Анықтау (I-II саты) Өсімі (%p): <span id="shiftVal" class="text-xl font-bold text-white ml-2">+7.0%p</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <button onclick="setScenario(4)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 rounded text-xs font-semibold transition">1. Консервативті (+4%p)</button>
+                            <button onclick="setScenario(7)" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded text-xs font-semibold transition">2. Базалық (+7%p)</button>
+                            <button onclick="setScenario(10)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 rounded text-xs font-semibold transition">3. Оптимистік (+10%p)</button>
+                        </div>
+                    </div>
+                    <input type="range" id="earlyShiftSlider" min="1" max="15" step="0.5" value="7" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-400" oninput="updateCalculator(parseFloat(this.value))">
+
+                    <!-- Live Dynamic Results -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-slate-800">
+                        <div class="p-3 bg-slate-800/80 rounded-lg text-center border border-slate-700">
+                            <p class="text-[10px] uppercase tracking-wider text-slate-400">1 Пациент Емдеу Төлемі</p>
+                            <p id="calcCostPerPatient" class="text-base sm:text-lg font-bold text-teal-300 mt-1">3 630 500 ₸</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/80 rounded-lg text-center border border-slate-700">
+                            <p class="text-[10px] uppercase tracking-wider text-slate-400">1 Пациенттен Үнем</p>
+                            <p id="calcSavingsPerPatient" class="text-base sm:text-lg font-bold text-emerald-300 mt-1">627 500 ₸</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/80 rounded-lg text-center border border-slate-700">
+                            <p class="text-[10px] uppercase tracking-wider text-slate-400">Маңғыстау Үнемі (1.2k)</p>
+                            <p id="calcMangystauSavings" class="text-base sm:text-lg font-bold text-cyan-300 mt-1">0.75 млрд ₸</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/80 rounded-lg text-center border border-slate-700">
+                            <p class="text-[10px] uppercase tracking-wider text-slate-400">ҚР Таза Жылдық Үнемі</p>
+                            <p id="calcKazSavings" class="text-base sm:text-lg font-bold text-teal-300 mt-1">25.86 млрд ₸</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="custom-card p-4">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 text-center">Сценарийлер бойынша Сатылық Ығысу (Stage Migration)</h4>
+                        <div class="chart-container">
+                            <canvas id="scenarioComparisonChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="custom-card p-4">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 text-center">ҚР Бойынша Таза Экономикалық Үнем (Миллиард KZT)</h4>
+                        <div class="chart-container">
+                            <canvas id="savingsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scenario Comparative Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-700 border border-slate-200 rounded-lg">
+                        <thead class="text-xs uppercase bg-slate-800 text-white">
+                            <tr>
+                                <th class="px-3 py-3">Сценарий</th>
+                                <th class="px-3 py-3">Ерте Саты Өсімі</th>
+                                <th class="px-3 py-3">I Саты</th>
+                                <th class="px-3 py-3">II Саты</th>
+                                <th class="px-3 py-3">III Саты</th>
+                                <th class="px-3 py-3">IV Саты</th>
+                                <th class="px-3 py-3">1 Пациент Шығыны</th>
+                                <th class="px-3 py-3">Маңғыстау Үнемі</th>
+                                <th class="px-3 py-3 bg-teal-900">ҚР Таза Үнемі</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold">1. Консервативті</td>
+                                <td class="px-3 py-2.5 text-amber-600 font-semibold">+4.0%p</td>
+                                <td class="px-3 py-2.5">24.0%</td>
+                                <td class="px-3 py-2.5">34.0%</td>
+                                <td class="px-3 py-2.5">25.0%</td>
+                                <td class="px-3 py-2.5">17.0%</td>
+                                <td class="px-3 py-2.5">3 884 000 ₸</td>
+                                <td class="px-3 py-2.5 font-semibold">0.45 млрд ₸</td>
+                                <td class="px-3 py-2.5 font-bold text-teal-700 bg-teal-50">15.21 млрд ₸</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 bg-teal-50/40">
+                                <td class="px-3 py-2.5 font-bold">2. Базалық (Realistic)</td>
+                                <td class="px-3 py-2.5 text-teal-600 font-semibold">+7.0%p</td>
+                                <td class="px-3 py-2.5">27.0%</td>
+                                <td class="px-3 py-2.5">35.0%</td>
+                                <td class="px-3 py-2.5">23.0%</td>
+                                <td class="px-3 py-2.5">15.0%</td>
+                                <td class="px-3 py-2.5">3 630 500 ₸</td>
+                                <td class="px-3 py-2.5 font-semibold">0.75 млрд ₸</td>
+                                <td class="px-3 py-2.5 font-bold text-teal-800 bg-teal-100">25.86 млрд ₸</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold">3. Оптимистік</td>
+                                <td class="px-3 py-2.5 text-emerald-600 font-semibold">+10.0%p</td>
+                                <td class="px-3 py-2.5">30.0%</td>
+                                <td class="px-3 py-2.5">36.0%</td>
+                                <td class="px-3 py-2.5">22.0%</td>
+                                <td class="px-3 py-2.5">12.0%</td>
+                                <td class="px-3 py-2.5">3 331 000 ₸</td>
+                                <td class="px-3 py-2.5 font-semibold">1.11 млрд ₸</td>
+                                <td class="px-3 py-2.5 font-bold text-teal-700 bg-teal-50">38.43 млрд ₸</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: HTA, QALY & Plotly Visualizations -->
+        <section id="hta-qaly" class="space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-xl font-bold text-slate-900 border-b pb-3">4. Фармакоэкономика (QALY және ICER Доминантты Стратегия)</h3>
+                <p class="text-slate-600 leading-relaxed text-sm">
+                    ISPOR және NICE HTA нұсқаулықтарына сай, 5 жылдық өмір сапасы $r = 3\%$ ($0.03$) дисконттау мөлшерлемесімен ($DF_5 = 4.5797$) есептелді. EQ-5D индексі бойынша өмір сапасы: $U_1=0.88, U_2=0.78, U_3=0.58, U_4=0.35$.
+                    Барлық сценарийде емдеу шығындары азайып ($\Delta C < 0$), өмір сапасы артқандықтан ($\Delta QALY > 0$), ICER теріс мән алып, бұл жүйе <strong>«Доминантты Стратегия» (Dominant Strategy)</strong> деп танылады.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-2">
+                    <div class="custom-card p-4">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 text-center">5 Жылдық Сақталған Жиынтық QALY (ҚР Масштабында)</h4>
+                        <div class="chart-container">
+                            <canvas id="qalyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="custom-card p-4">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 text-center">Cost-Effectiveness Plane (Plotly WebGL Canvas)</h4>
+                        <div id="plotlyIcePlane" class="w-full h-[320px]"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Scientific Defense Talking Points -->
+        <section class="space-y-6">
+            <div class="bg-slate-900 text-white p-6 rounded-xl shadow-md border border-slate-800 space-y-4">
+                <h3 class="text-lg font-bold text-teal-400 border-b border-slate-800 pb-3">5. Жобаны Комиссия мен Сарапшылар Алдында Қорғауға Арналған 4 Негізгі Тезис</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
+                    <div class="p-4 rounded-lg bg-slate-800 border border-slate-700">
+                        <p class="font-bold text-teal-300 mb-1">1. Нақты Деректерге Негізделген Модель:</p>
+                        <p class="text-slate-300">«Дәстүрлі жүйедегі I-II сатылардың 52% үлесі ойдан алынбаған, бұл — ҚР статистикасының нақты көрсеткіші. Ал сатылар бойынша емдеу бағасы (850 мыңнан 9.8 млн теңгеге дейін) МӘМС/ТМККК бекітілген тарифтерінен алынған.»</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-slate-800 border border-slate-700">
+                        <p class="font-bold text-teal-300 mb-1">2. Ғылыми Сезімталдық Анализі (Sensitivity Analysis):</p>
+                        <p class="text-slate-300">«Біз жалғыз цифрға байланып қалмау үшін 3 сценарийді есептеп шықтық. Ең консервативті (+4%p) сценарийдің өзінде Қазақстан бойынша таза үнем <strong>15.21 млрд теңгені</strong>, ал Маңғыстау облысында <strong>0.45 млрд теңгені</strong> құрайды.»</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-slate-800 border border-slate-700">
+                        <p class="font-bold text-teal-300 mb-1">3. Доминантты Стратегия (Dominant Strategy):</p>
+                        <p class="text-slate-300">«Бұл жүйе мемлекеттен қосымша шығын талап етпейді. IT-инфрақұрылымға жұмсалатын біреттік 0.5 млрд теңге бірінші жылдың өзінде 30-70 есе өзін-өзі ақтайды. Бұл — фармакоэкономикадағы сирек кездесетін доминантты модель.»</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-slate-800 border border-slate-700">
+                        <p class="font-bold text-teal-300 mb-1">4. Адам Капиталы мен Өмір Сапасы (QALY):</p>
+                        <p class="text-slate-300">«Жоба 5 жыл ішінде елімізде <strong>7,400-ден астам сапалы өмір жылын (QALY)</strong> сақтап қалады, бұл онкологиялық науқастардың еңбекке қабілеттілігін арттырып, отбасылардың әлеуметтік-экономикалық әл-ауқатын қорғайды.»</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer / Citations Section -->
+        <footer class="bg-white border border-slate-200 p-6 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Дереккөздер мен Нормативтік База:</h4>
+            <ul class="text-[11px] text-slate-500 space-y-1 list-disc pl-4 leading-relaxed">
+                <li>ҚР Денсаулық сақтау министрлігі. ТМККК мен МӘМС шеңберіндегі онкологиялық қызметтердің бекітілген тарифтері мен клиникалық хаттамалары.</li>
+                <li>Қазақ онкология және радиология ғылыми-зерттеу институтының (ҚазОИРРИ) статистикалық жинақтары.</li>
+                <li>ISPOR & NICE HTA Guidelines: Health Technology Assessment & Discounting Guidelines ($r = 3\%$).</li>
+                <li>EQ-5D-5L Utility Index for Cancer Stages: $U_1=0.88, U_2=0.78, U_3=0.58, U_4=0.35$.</li>
+                <li>OncoFin & SmartQ бағдарламалық-аппараттық кешенінің алгоритмдік есептеулері.</li>
+            </ul>
+            <div class="border-t border-slate-100 pt-3 text-center text-[10px] text-slate-400">
+                &copy; 2026 OncoScreening Optimization Project. All research models compliant with HTA & Kazakhstani Healthcare Regulations.
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- JavaScript Logic & Chart Configs -->
+    <script>
+        // Shared Color Palette
+        const palette = {
+            tealPrimary: '#14b8a6',
+            tealDark: '#0d9488',
+            slateDark: '#1e293b',
+            slateMedium: '#64748b',
+            emeraldBg: '#10b981',
+            amberBg: '#f59e0b',
+            roseBg: '#f43f5e',
+            indigoBg: '#6366f1'
+        };
+
+        // Utility: Label Wrapper (>16 chars)
+        function formatLabels(labels) {
+            return labels.map(label => {
+                if (typeof label === 'string' && label.length > 16) {
+                    const words = label.split(' ');
+                    const lines = [];
+                    let currentLine = '';
+                    words.forEach(word => {
+                        if ((currentLine + word).length > 16) {
+                            if (currentLine) lines.push(currentLine.trim());
+                            currentLine = word + ' ';
+                        } else {
+                            currentLine += word + ' ';
+                        }
+                    });
+                    if (currentLine) lines.push(currentLine.trim());
+                    return lines;
+                }
+                return label;
+            });
+        }
+
+        // Universal Chart.js Tooltip Callback Config
+        const universalTooltipConfig = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            return Array.isArray(label) ? label.join(' ') : label;
+                        }
+                    }
+                }
+            }
+        };
+
+        // 1. Queue Efficiency Chart
+        const queueCtx = document.getElementById('queueEfficiencyChart').getContext('2d');
+        new Chart(queueCtx, {
+            type: 'bar',
+            data: {
+                labels: formatLabels(['Күту Уақыты (мин)', 'Жүктеме Коэффициенті (%)', 'Тексеруден Бас Тарту (%)']),
+                datasets: [
+                    {
+                        label: 'Дәстүрлі Жүйе',
+                        data: [67.5, 87.0, 29.3],
+                        backgroundColor: palette.roseBg,
+                    },
+                    {
+                        label: 'SmartQ Оңтайланған',
+                        data: [15.0, 34.5, 8.5],
+                        backgroundColor: palette.tealPrimary,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: universalTooltipConfig.plugins,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 2. Stage Tariffs Chart
+        const tariffCtx = document.getElementById('tariffChart').getContext('2d');
+        new Chart(tariffCtx, {
+            type: 'bar',
+            data: {
+                labels: formatLabels(['I Саты (Операция)', 'II Саты (Хирургия+Химио)', 'III Саты (Таргеттік Ем)', 'IV Саты (Иммунотерапия)']),
+                datasets: [{
+                    label: 'ҚР Тарифі (KZT)',
+                    data: [850000, 2100000, 5200000, 9800000],
+                    backgroundColor: [palette.tealPrimary, palette.emeraldBg, palette.amberBg, palette.roseBg]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: universalTooltipConfig.plugins,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: function(value) { return (value / 1000000) + ' млн ₸'; } }
+                    }
+                }
+            }
+        });
+
+        // 3. Baseline Stage Distribution Doughnut
+        const baselineCtx = document.getElementById('stageBaselineChart').getContext('2d');
+        new Chart(baselineCtx, {
+            type: 'doughnut',
+            data: {
+                labels: formatLabels(['I Саты (20%)', 'II Саты (32%)', 'III Саты (28%)', 'IV Саты (20%)']),
+                datasets: [{
+                    data: [20, 32, 28, 20],
+                    backgroundColor: [palette.tealPrimary, palette.emeraldBg, palette.amberBg, palette.roseBg]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: universalTooltipConfig.plugins
+            }
+        });
+
+        // 4. Scenario Comparison Chart (Stage Migration)
+        const scenarioCtx = document.getElementById('scenarioComparisonChart').getContext('2d');
+        new Chart(scenarioCtx, {
+            type: 'line',
+            data: {
+                labels: ['I Саты', 'II Саты', 'III Саты', 'IV Саты'],
+                datasets: [
+                    {
+                        label: 'Дәстүрлі Жүйе',
+                        data: [20.0, 32.0, 28.0, 20.0],
+                        borderColor: palette.slateMedium,
+                        borderDash: [4, 4],
+                        fill: false
+                    },
+                    {
+                        label: '1. Консервативті (+4%p)',
+                        data: [24.0, 34.0, 25.0, 17.0],
+                        borderColor: palette.amberBg,
+                        tension: 0.2
+                    },
+                    {
+                        label: '2. Базалық (+7%p)',
+                        data: [27.0, 35.0, 23.0, 15.0],
+                        borderColor: palette.tealPrimary,
+                        borderWidth: 3,
+                        tension: 0.2
+                    },
+                    {
+                        label: '3. Оптимистік (+10%p)',
+                        data: [30.0, 36.0, 22.0, 12.0],
+                        borderColor: palette.emeraldBg,
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: universalTooltipConfig.plugins,
+                scales: { y: { ticks: { callback: function(val) { return val + '%'; } } } }
+            }
+        });
+
+        // 5. Net Savings Bar Chart
+        const savingsCtx = document.getElementById('savingsChart').getContext('2d');
+        new Chart(savingsCtx, {
+            type: 'bar',
+            data: {
+                labels: formatLabels(['1. Консервативті (+4%p)', '2. Базалық (+7%p)', '3. Оптимистік (+10%p)']),
+                datasets: [{
+                    label: 'ҚР Таза Жылдық Үнемі (Млрд KZT)',
+                    data: [15.21, 25.86, 38.43],
+                    backgroundColor: [palette.amberBg, palette.tealPrimary, palette.emeraldBg]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: universalTooltipConfig.plugins,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: function(val) { return val + ' млрд ₸'; } }
+                    }
+                }
+            }
+        });
+
+        // 6. QALY Bar Chart
+        const qalyCtx = document.getElementById('qalyChart').getContext('2d');
+        new Chart(qalyCtx, {
+            type: 'bar',
+            data: {
+                labels: formatLabels(['1. Консервативті', '2. Базалық', '3. Оптимистік']),
+                datasets: [{
+                    label: '5-Жылдық Сақталған QALY (ҚР)',
+                    data: [4405, 7405, 10848],
+                    backgroundColor: palette.indigoBg
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: universalTooltipConfig.plugins,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 7. Plotly.js Cost-Effectiveness Plane (Canvas/WebGL Rendering)
+        const plotlyTrace1 = {
+            x: [4405, 7405, 10848],
+            y: [-15.21, -25.86, -38.43],
+            mode: 'markers+text',
+            type: 'scattergl',
+            name: 'Сценарийлер',
+            text: ['1. Консервативті', '2. Базалық', '3. Оптимистік'],
+            textposition: 'top right',
+            marker: { size: 14, color: '#14b8a6' }
+        };
+
+        const plotlyLayout = {
+            margin: { t: 20, r: 20, l: 50, b: 50 },
+            xaxis: { title: 'Пайда: Δ QALY (Сақталған Өмір Сапасы)' },
+            yaxis: { title: 'Шығын: Δ C (Миллиард ₸ Үнем)' },
+            annotations: [{
+                x: 7405,
+                y: -25.86,
+                xref: 'x',
+                yref: 'y',
+                text: 'ДОМИНАНТТЫ ЗОНА (Шығын азаяды, Пайда артады)',
+                showarrow: true,
+                arrowhead: 2,
+                ax: 0,
+                ay: -40
+            }]
+        };
+
+        Plotly.newPlot('plotlyIcePlane', [plotlyTrace1], plotlyLayout, {responsive: true, displayModeBar: false});
+
+        // Dynamic Interactive Calculator Logic
+        function updateCalculator(shiftPercent) {
+            document.getElementById('shiftVal').innerText = '+' + shiftPercent.toFixed(1) + '%p';
+            document.getElementById('earlyShiftSlider').value = shiftPercent;
+
+            // Calculations based on tariffs
+            const c1 = 850000, c2 = 2100000, c3 = 5200000, c4 = 9800000;
+            const baselineCost = 4258000;
+
+            // Compute stage proportions based on shift
+            let p1 = 20.0 + (shiftPercent * 1.0);
+            let p2 = 32.0 + (shiftPercent * 0.4);
+            let p3 = 28.0 - (shiftPercent * 0.71);
+            let p4 = 20.0 - (shiftPercent * 0.69);
+
+            const optCost = (p1/100*c1) + (p2/100*c2) + (p3/100*c3) + (p4/100*c4);
+            const savingsPerPatient = baselineCost - optCost;
+            const mangystauSavings = (1200 * savingsPerPatient) / 1000000000;
+            const kazNetSavings = ((42000 * savingsPerPatient) - 500000000) / 1000000000;
+
+            document.getElementById('calcCostPerPatient').innerText = Math.round(optCost).toLocaleString('ru-RU') + ' ₸';
+            document.getElementById('calcSavingsPerPatient').innerText = Math.round(savingsPerPatient).toLocaleString('ru-RU') + ' ₸';
+            document.getElementById('calcMangystauSavings').innerText = mangystauSavings.toFixed(2) + ' млрд ₸';
+            document.getElementById('calcKazSavings').innerText = kazNetSavings.toFixed(2) + ' млрд ₸';
+        }
+
+        function setScenario(val) {
+            updateCalculator(val);
+        }
+    </script>
+</body>
+</html>
